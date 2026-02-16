@@ -10,26 +10,32 @@ from .routers import products, brands, categories, orders
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: create tables, GIN index, and seed
-    Base.metadata.create_all(bind=engine)
-    with engine.connect() as conn:
-        # Full-text search GIN index
-        conn.execute(text(
-            "CREATE INDEX IF NOT EXISTS idx_product_search "
-            "ON products USING gin("
-            "to_tsvector('english', "
-            "coalesce(name, '') || ' ' || coalesce(tire_size, '') || ' ' || coalesce(description, '')"
-            "))"
-        ))
-        # pg_trgm extension + trigram index for fuzzy tire size search
-        conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
-        conn.execute(text(
-            "CREATE INDEX IF NOT EXISTS idx_product_tire_size_trgm "
-            "ON products USING gin(tire_size gin_trgm_ops)"
-        ))
-        conn.commit()
-    # Seed database (idempotent — checks if data exists before inserting)
-    seed_database()
+    # Startup: create tables, indexes, and seed
+    try:
+        Base.metadata.create_all(bind=engine)
+        with engine.connect() as conn:
+            # Full-text search GIN index
+            conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS idx_product_search "
+                "ON products USING gin("
+                "to_tsvector('english', "
+                "coalesce(name, '') || ' ' || coalesce(tire_size, '') || ' ' || coalesce(description, '')"
+                "))"
+            ))
+            # pg_trgm extension + trigram index for fuzzy tire size search
+            try:
+                conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+                conn.execute(text(
+                    "CREATE INDEX IF NOT EXISTS idx_product_tire_size_trgm "
+                    "ON products USING gin(tire_size gin_trgm_ops)"
+                ))
+            except Exception as e:
+                print(f"Warning: Could not create pg_trgm extension (may need superuser): {e}")
+            conn.commit()
+        # Seed database (idempotent — checks if data exists before inserting)
+        seed_database()
+    except Exception as e:
+        print(f"Startup warning: {e}")
     yield
 
 
