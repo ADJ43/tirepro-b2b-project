@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+.env.local
+.git/
+.gitignore
+wait-for-db.sh
+*.log
+.pytest_cache/
+.coverage
+.venv/
+venv/
