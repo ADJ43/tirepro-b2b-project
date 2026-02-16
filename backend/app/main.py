@@ -28,9 +28,8 @@ async def lifespan(app: FastAPI):
             "ON products USING gin(tire_size gin_trgm_ops)"
         ))
         conn.commit()
-    # Only seed in development — production uses Cloud Run seed job
-    if settings.ENVIRONMENT != "production":
-        seed_database()
+    # Seed database (idempotent — checks if data exists before inserting)
+    seed_database()
     yield
 
 

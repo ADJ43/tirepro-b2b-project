@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY app/ ./app/
 
-# Cloud Run sets PORT env var (default 8080)
+# Railway/Cloud providers set PORT env var
 ENV PORT=8080
 ENV ENVIRONMENT=production
 

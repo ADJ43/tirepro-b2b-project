@@ -2,7 +2,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from .config import settings
 
-# Production: connection pooling optimized for Cloud SQL
+# Fix postgres:// → postgresql:// (Railway/Heroku use postgres://, SQLAlchemy 2.0 needs postgresql://)
+database_url = settings.DATABASE_URL
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+# Production: connection pooling
 engine_kwargs = {}
 if settings.ENVIRONMENT == "production":
     engine_kwargs = {
@@ -13,7 +18,7 @@ if settings.ENVIRONMENT == "production":
         "pool_pre_ping": True,
     }
 
-engine = create_engine(settings.DATABASE_URL, **engine_kwargs)
+engine = create_engine(database_url, **engine_kwargs)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
